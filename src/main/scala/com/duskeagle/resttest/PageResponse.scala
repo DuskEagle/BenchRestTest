@@ -5,7 +5,7 @@ import play.api.libs.json.Json
 case class PageResponse(
   totalCount: Int,
   page: Int,
-  transaction: List[Transaction]
+  transactions: List[Transaction]
 )
 
 object PageResponse {
