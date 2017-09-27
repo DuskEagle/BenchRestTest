@@ -3,7 +3,7 @@ lazy val root = (project in file(".")).
     inThisBuild(List(
       organization := "com.duskeagle",
       scalaVersion := "2.12.1",
-      version      := "0.1.0-SNAPSHOT"
+      version      := "1.0.0"
     )),
     name := "RestTest"
   )
