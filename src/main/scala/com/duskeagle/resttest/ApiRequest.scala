@@ -1,6 +1,7 @@
 package com.duskeagle.resttest
 
 import play.api.libs.json.{JsError, JsSuccess, Json}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
@@ -8,6 +9,8 @@ import scala.util.{Failure, Success, Try}
 import com.typesafe.scalalogging.LazyLogging
 
 class ApiRequest(endpointBase: String) extends LazyLogging {
+
+  private val transactionsPerPage = 10
 
   val endpoint = endpointBase.stripSuffix("/") + "/%d.json"
 
@@ -18,22 +21,28 @@ class ApiRequest(endpointBase: String) extends LazyLogging {
     val firstPageAttempt = Await.result(getPage(1), Duration.Inf)
     firstPageAttempt match {
       case Success(firstPage) =>
-        if (firstPage.totalCount <= 1) {
+        if (firstPage.totalCount <= transactionsPerPage) {
           firstPage.transactions
         } else {
-          firstPage.transactions ++ Await.result(Future.sequence((2 to firstPage.totalCount).map { i =>
-            getPage(i)
-          }), Duration.Inf).flatMap { pageAttempt =>
-            pageAttempt match {
-              case Success(page) => page.transactions
-              case Failure(ex) =>
-                logger.warn(ex.getMessage)
-                Nil
+          val allTransactions = firstPage.transactions ++
+            Await.result(Future.sequence((2 to math.ceil(firstPage.totalCount/transactionsPerPage.toFloat).toInt).map { i =>
+              getPage(i)
+            }), Duration.Inf).flatMap { pageAttempt =>
+              pageAttempt match {
+                case Success(page) => page.transactions
+                case Failure(ex) =>
+                  logger.warn(ex.getMessage)
+                  Nil
+              }
             }
+          if (allTransactions.length != firstPage.totalCount) {
+            logger.warn(s"Received ${allTransactions.length} transactions but expected ${firstPage.totalCount} transactions")
           }
+          allTransactions
         }
-      case Failure(ex) => throw ex
-
+      case Failure(ex) =>
+        // We can't recover if we failed to fetch or parse the first page.
+        throw ex
     }
   }
 
