@@ -8,32 +8,52 @@ import play.api.libs.ws.ahc.StandaloneAhcWSClient
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success, Try}
+import com.typesafe.scalalogging.LazyLogging
 
-class ApiRequest(endpointBase: String) {
+class ApiRequest(endpointBase: String) extends LazyLogging {
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
 
   val endpoint = endpointBase.stripSuffix("/") + "/%d.json"
-  val firstPageTimeout = Duration(1, scala.concurrent.duration.SECONDS)
-  val timeout = Duration(5, scala.concurrent.duration.SECONDS)
   val ws = StandaloneAhcWSClient()
 
   def getTransactions(): List[Transaction] = {
-    val firstPage = Await.result(getPage(1), firstPageTimeout)
-    if (firstPage.totalCount <= 1) {
-      firstPage.transactions
-    } else {
-      firstPage.transactions ++ Await.result(Future.sequence((2 to firstPage.totalCount).map { i =>
-        getPage(i)
-      }), timeout).flatMap { _.transactions }
+    val firstPageAttempt = Await.result(getPage(1), Duration.Inf)
+    firstPageAttempt match {
+      case Success(firstPage) =>
+        if (firstPage.totalCount <= 1) {
+          firstPage.transactions
+        } else {
+          val restOfTransactions = Await.result(Future.sequence((2 to firstPage.totalCount).map { i =>
+            getPage(i)
+          }), Duration.Inf).flatMap { pageAttempt =>
+            pageAttempt match {
+              case Success(page) => page.transactions
+              case Failure(ex) =>
+                logger.warn(ex.getMessage)
+                Nil
+            }
+          }
+          firstPage.transactions ++ restOfTransactions
+        }
+      case Failure(ex) => throw ex
+
     }
   }
 
-  private def getPage(page: Int): Future[PageResponse] = {
-    ws.url(endpoint.format(page)).withFollowRedirects(true).get().map { response =>
-      Json.fromJson[PageResponse](Json.parse(response.body)) match {
-        case JsSuccess(pr: PageResponse, _) => pr
-        case e: JsError => sys.error(e.toString)
+  private def getPage(page: Int): Future[Try[PageResponse]] = {
+    val url = endpoint.format(page)
+    ws.url(url).withFollowRedirects(true).get().map { response =>
+      Try {
+        if (response.status == 200)
+          Json.fromJson[PageResponse](Json.parse(response.body)) match {
+            case JsSuccess(pr: PageResponse, _) => pr
+            case e: JsError => sys.error(e.toString)
+          }
+        else {
+          sys.error(s"Received HTTP status code ${response.status} while contacting $url")
+        }
       }
     }
   }

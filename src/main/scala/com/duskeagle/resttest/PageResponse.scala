@@ -9,5 +9,5 @@ case class PageResponse(
 )
 
 object PageResponse {
-  implicit val format = Json.format[PageResponse]
+  implicit val reads = Json.reads[PageResponse]
 }

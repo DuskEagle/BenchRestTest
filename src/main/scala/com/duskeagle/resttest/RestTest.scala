@@ -8,8 +8,8 @@ object RestTest {
       case endpoint :: Nil => ApiRequest(endpoint)
       case _ => sys.error("Usage: ./resttest [alternative endpoint]")
     }
-    val transactions = apiRequest.getTransactions()
-
+    val transactionManager = new TransactionManager(apiRequest.getTransactions())
+    println(transactionManager.totalBalance)
   }
 
 }
