@@ -21,7 +21,7 @@ class ApiRequest(endpointBase: String) extends LazyLogging {
         if (firstPage.totalCount <= 1) {
           firstPage.transactions
         } else {
-          val restOfTransactions = Await.result(Future.sequence((2 to firstPage.totalCount).map { i =>
+          firstPage.transactions ++ Await.result(Future.sequence((2 to firstPage.totalCount).map { i =>
             getPage(i)
           }), Duration.Inf).flatMap { pageAttempt =>
             pageAttempt match {
@@ -31,7 +31,6 @@ class ApiRequest(endpointBase: String) extends LazyLogging {
                 Nil
             }
           }
-          firstPage.transactions ++ restOfTransactions
         }
       case Failure(ex) => throw ex
 

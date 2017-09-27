@@ -18,7 +18,7 @@ object RestTest {
       case Nil => ApiRequest.apply
       case endpoint :: Nil => ApiRequest(endpoint)
       case _ =>
-        System.err.println("Usage: ./resttest [endpoint]")
+        System.err.println("Usage: java -jar <jar file> [endpoint]")
         System.err.println("where `endpoint` defaults to http://resttest.bench.co/transactions/")
         sys.exit(1)
     }

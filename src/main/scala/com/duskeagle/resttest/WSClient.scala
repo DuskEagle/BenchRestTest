@@ -11,6 +11,9 @@ object WSClient {
 
   val ws = StandaloneAhcWSClient()
 
+  /**
+    * This must be called before the application will be able to exit.
+    */
   def shutdown(): Unit = {
     ws.close()
     system.terminate()

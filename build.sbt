@@ -8,6 +8,7 @@ lazy val root = (project in file(".")).
     name := "RestTest"
   )
 
+assemblyJarName in assembly := "resttest.jar"
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.3"
 libraryDependencies += "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.1"
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1"
