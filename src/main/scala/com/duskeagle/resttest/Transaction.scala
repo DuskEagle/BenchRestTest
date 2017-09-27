@@ -1,9 +1,7 @@
 package com.duskeagle.resttest
 
-import java.text.SimpleDateFormat
-
 import play.api.libs.functional.syntax._
-import play.api.libs.json.{JsPath, Json, Reads, Writes}
+import play.api.libs.json.{JsPath, Reads}
 import java.time.LocalDate
 
 case class Transaction(

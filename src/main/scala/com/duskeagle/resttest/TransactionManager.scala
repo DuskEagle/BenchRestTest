@@ -33,6 +33,10 @@ class TransactionManager(transactions: List[Transaction]) {
 
     val transactionsByDate = transactions.groupBy { _.date }
     val dates = dateRange(transactionsByDate.keys.toList)
+    // Each day, add the balance from the previous day with the current day's
+    // transactions, and then prepend that new balance to `runningList`. We
+    // prepend and reverse at the end instead of appending because prepending
+    // to a list is O(1) while appending is O(n).
     dates.foldLeft(List.empty[(LocalDate, BigDecimal)]) { case (runningList, date) =>
       val previousBalance = runningList.headOption match {
         case None => BigDecimal("0")
@@ -41,6 +45,5 @@ class TransactionManager(transactions: List[Transaction]) {
       (date, previousBalance + balanceForTransactions(transactionsByDate.getOrElse(date, List.empty))) +: runningList
     }.reverse
   }
-
 
 }

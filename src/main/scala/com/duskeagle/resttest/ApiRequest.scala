@@ -1,10 +1,6 @@
 package com.duskeagle.resttest
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import play.api.libs.ws.ahc.StandaloneAhcWSClient
-
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
@@ -12,12 +8,12 @@ import scala.util.{Failure, Success, Try}
 import com.typesafe.scalalogging.LazyLogging
 
 class ApiRequest(endpointBase: String) extends LazyLogging {
-  implicit val system = ActorSystem()
-  implicit val materializer = ActorMaterializer()
 
   val endpoint = endpointBase.stripSuffix("/") + "/%d.json"
-  val ws = StandaloneAhcWSClient()
 
+  /**
+    * Fetch all pages of transactions from the given endpoint.
+    */
   def getTransactions(): List[Transaction] = {
     val firstPageAttempt = Await.result(getPage(1), Duration.Inf)
     firstPageAttempt match {
@@ -44,7 +40,7 @@ class ApiRequest(endpointBase: String) extends LazyLogging {
 
   private def getPage(page: Int): Future[Try[PageResponse]] = {
     val url = endpoint.format(page)
-    ws.url(url).withFollowRedirects(true).get().map { response =>
+    WSClient.ws.url(url).withFollowRedirects(true).get().map { response =>
       Try {
         if (response.status == 200)
           Json.fromJson[PageResponse](Json.parse(response.body)) match {
