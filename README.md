@@ -1,7 +1,7 @@
 ## Running
 
 To run this application from sbt, simply run `sbt run`. Alternatively, you can
-create a JAR file at target/scala-2.12/resttest.jar by running `sbt assembly`.
+create a JAR file at `target/scala-2.12/resttest.jar` by running `sbt assembly`.
 You can then run the application with `java -jar target/scala-2.12/resttest.jar`.
 Any warnings/errors will be printed to STDERR, allowing you to separate them from
 regular program output using output redirection (e.g., `java ... 2>/dev/null`
